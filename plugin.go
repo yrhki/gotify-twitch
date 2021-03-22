@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"sync"
 	"time"
 
@@ -98,57 +97,6 @@ func (c *Plugin) SetStorageHandler(h plugin.StorageHandler) {
 // SetMessageHandler implements plugin.StorageHandler
 func (c *Plugin) SetMessageHandler(h plugin.MessageHandler) {
 	c.msgHandler = h
-}
-
-// GetDisplay implements plugin.Displayer
-func (c *Plugin) GetDisplay(location *url.URL) string {
-	var (
-		stor          storage
-		output        = "# Live Status\n"
-		outputLive    string
-		outputOffline string
-	)
-
-	storageBytes, err := c.storageHandler.Load()
-	if err != nil {
-		return err.Error()
-	}
-	err = json.Unmarshal(storageBytes, &stor)
-	if err != nil {
-		return err.Error()
-	}
-
-	now := time.Now()
-	for _, status := range stor.ChannelStatus {
-		if status.IsLive {
-			outputLive += fmt.Sprintf(`### %s [LIVE](https://twitch.tv/%s)  
-**Title**: %s  
-**Category**: %s  
-**Start**: %s (%s)  
-[![ThumbnailURL](%s "Click to watch")](https://twitch.tv/%s)  
-`,
-				status.Username,
-				status.Username,
-				status.Title,
-				status.Category.Name,
-				timeFormat(status.Start.Local()), now.Sub(status.Start).Round(time.Second),
-				thumbnailSize(status.Thumbnail), status.Username)
-		} else {
-			outputOffline += fmt.Sprintf(`### %s [OFFLINE](https://twitch.tv/%s)  
-**Last Stream**  
-**Title**: %s  
-**Category**: %s  
-**Start**: %s  
-**End**: %s (%s)  
-`,
-				status.Username,
-				status.Username,
-				status.Title,
-				status.Category.Name,
-				timeFormat(status.Start.Local()), timeFormat(status.End.Local()), status.End.Sub(status.Start).Round(time.Second))
-		}
-	}
-	return output + outputLive + outputOffline
 }
 
 // NewGotifyPluginInstance creates a plugin instance for a user context.

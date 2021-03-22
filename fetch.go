@@ -101,7 +101,7 @@ Started: %s (%s)
 				stream.Title,
 				category.Name,
 				timeFormat(stream.StartedAt.Local()), now.Sub(stream.StartedAt).Round(time.Second),
-				status.username()),
+				status.UsernameLower()),
 			Priority: c.config.Priority,
 			Extras:   make(map[string]interface{}),
 		}

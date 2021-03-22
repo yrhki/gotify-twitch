@@ -20,8 +20,15 @@ type channelStatus struct {
 	Username  string     `json:"username"`
 }
 
-func (status *channelStatus) username() string {
+func (status channelStatus) UsernameLower() string {
 	return strings.ToLower(status.Username)
+}
+
+func (status channelStatus) Uptime() time.Duration {
+	if status.End != nil {
+		return status.End.Sub(status.Start).Round(time.Second)
+	}
+	return time.Now().Sub(status.Start).Round(time.Second)
 }
 
 // Set Stream offline
