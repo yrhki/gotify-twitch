@@ -7,7 +7,7 @@ import (
 	"github.com/nicklaw5/helix"
 )
 
-type UserID string
+type userID string
 
 type channelStatus struct {
 	Category  helix.Game `json:"category"`
@@ -25,16 +25,16 @@ func (status *channelStatus) username() string {
 }
 
 // Set Stream offline
-func (stat *channelStatus) SetOffline() {
-	stat.IsLive = false
+func (status *channelStatus) setOffline() {
+	status.IsLive = false
 	end := time.Now().UTC().Round(time.Second)
-	stat.End = &end
+	status.End = &end
 }
 
 // Convert StreamStatus to messageMetadata
-func (stat *channelStatus) GetMetadata(action string) messageMetadata {
+func (status *channelStatus) getMetadata(action string) messageMetadata {
 	out := messageMetadata{
-		channelStatus: stat,
+		channelStatus: status,
 		Action:        action,
 	}
 
@@ -45,6 +45,6 @@ const storageVersion = 3
 
 // Storage for plugin
 type storage struct {
-	ChannelStatus map[UserID]channelStatus `json:"channel_status"`
+	ChannelStatus map[userID]channelStatus `json:"channel_status"`
 	Version       uint                     `json:"version"`
 }

@@ -46,7 +46,7 @@ func (c *Plugin) fetch() error {
 	var (
 		stor storage
 		// Mark live channels
-		isLive map[UserID]bool = make(map[UserID]bool)
+		isLive map[userID]bool = make(map[userID]bool)
 	)
 
 	// Load storage
@@ -67,10 +67,10 @@ func (c *Plugin) fetch() error {
 		)
 
 		// Mark user is live
-		isLive[UserID(stream.UserID)] = true
+		isLive[userID(stream.UserID)] = true
 
 		// New follow, now live or diffrent start
-		if status, isAdded = stor.ChannelStatus[UserID(stream.UserID)]; !isAdded || !status.IsLive && stream.StartedAt != status.Start {
+		if status, isAdded = stor.ChannelStatus[userID(stream.UserID)]; !isAdded || !status.IsLive && stream.StartedAt != status.Start {
 			status.Start = stream.StartedAt
 			status.IsLive = true
 
@@ -91,7 +91,7 @@ func (c *Plugin) fetch() error {
 		status.Thumbnail = stream.ThumbnailURL
 		status.Category = category
 		status.End = nil
-		stor.ChannelStatus[UserID(stream.UserID)] = status
+		stor.ChannelStatus[userID(stream.UserID)] = status
 
 		message := plugin.Message{
 			Message: fmt.Sprintf(`**%s**  
@@ -111,7 +111,7 @@ Started: %s (%s)
 		} else {
 			message.Title = fmt.Sprintf("Twitch: %s is live", stream.UserName)
 		}
-		message.Extras["twitch::metadata"] = status.GetMetadata(action)
+		message.Extras["twitch::metadata"] = status.getMetadata(action)
 		message.Extras["client::display"] = messageDisplay{"text/markdown"}
 
 		c.msgHandler.SendMessage(message)
@@ -123,7 +123,7 @@ Started: %s (%s)
 		if !isLive[userID] {
 			// Channel was previously online
 			if status.IsLive {
-				status.SetOffline()
+				status.setOffline()
 				stor.ChannelStatus[userID] = status
 				// Notify when stream goes offline
 				if c.config.OnOffline {
@@ -132,7 +132,7 @@ Started: %s (%s)
 						Title:    fmt.Sprintf("Twitch: %s offline", status.Username),
 						Extras:   make(map[string]interface{}),
 					}
-					message.Extras["twitch::metadata"] = status.GetMetadata("offline")
+					message.Extras["twitch::metadata"] = status.getMetadata("offline")
 					message.Extras["client::display"] = messageDisplay{"text/markdown"}
 					c.msgHandler.SendMessage(message)
 				}

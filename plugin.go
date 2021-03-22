@@ -87,7 +87,7 @@ func (c *Plugin) SetStorageHandler(h plugin.StorageHandler) {
 	json.Unmarshal(b, &stor)
 
 	if stor.ChannelStatus == nil || stor.Version < storageVersion {
-		stor.ChannelStatus = make(map[UserID]channelStatus)
+		stor.ChannelStatus = make(map[userID]channelStatus)
 		stor.Version = storageVersion
 		if newStorage, err := json.Marshal(stor); err == nil {
 			c.storageHandler.Save(newStorage)
