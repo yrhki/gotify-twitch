@@ -83,17 +83,12 @@ func (c *Plugin) SetStorageHandler(h plugin.StorageHandler) {
 
 	// Init for storage
 	var stor storage
-	b, err := c.storageHandler.Load()
-	if err != nil {
-		panic(err)
-	}
-	err = json.Unmarshal(b, &stor)
-	if err != nil {
-		panic(err)
-	}
+	b, _ := c.storageHandler.Load()
+	json.Unmarshal(b, &stor)
 
-	if stor.StreamStatus == nil {
-		stor.StreamStatus = make(map[string]channelStatus)
+	if stor.ChannelStatus == nil || stor.Version < storageVersion {
+		stor.ChannelStatus = make(map[UserID]channelStatus)
+		stor.Version = storageVersion
 		if newStorage, err := json.Marshal(stor); err == nil {
 			c.storageHandler.Save(newStorage)
 		}
@@ -124,35 +119,33 @@ func (c *Plugin) GetDisplay(location *url.URL) string {
 	}
 
 	now := time.Now()
-	for _, username := range c.config.Follow {
-		if status, exists := stor.StreamStatus[username]; exists {
-			if status.IsLive {
-				outputLive += fmt.Sprintf(`### %s [LIVE](https://twitch.tv/%s)  
+	for _, status := range stor.ChannelStatus {
+		if status.IsLive {
+			outputLive += fmt.Sprintf(`### %s [LIVE](https://twitch.tv/%s)  
 **Title**: %s  
 **Category**: %s  
 **Start**: %s (%s)  
 [![ThumbnailURL](%s "Click to watch")](https://twitch.tv/%s)  
 `,
-					username,
-					username,
-					status.Title,
-					status.Category.Name,
-					timeFormat(status.Start.Local()), now.Sub(status.Start).Round(time.Second),
-					thumbnailSize(status.ThumbnailURL), username)
-			} else {
-				outputOffline += fmt.Sprintf(`### %s [OFFLINE](https://twitch.tv/%s)  
+				status.Username,
+				status.Username,
+				status.Title,
+				status.Category.Name,
+				timeFormat(status.Start.Local()), now.Sub(status.Start).Round(time.Second),
+				thumbnailSize(status.Thumbnail), status.Username)
+		} else {
+			outputOffline += fmt.Sprintf(`### %s [OFFLINE](https://twitch.tv/%s)  
 **Last Stream**  
 **Title**: %s  
 **Category**: %s  
 **Start**: %s  
 **End**: %s (%s)  
 `,
-					username,
-					username,
-					status.Title,
-					status.Category.Name,
-					timeFormat(status.Start.Local()), timeFormat(status.End.Local()), status.End.Sub(status.Start).Round(time.Second))
-			}
+				status.Username,
+				status.Username,
+				status.Title,
+				status.Category.Name,
+				timeFormat(status.Start.Local()), timeFormat(status.End.Local()), status.End.Sub(status.Start).Round(time.Second))
 		}
 	}
 	return output + outputLive + outputOffline

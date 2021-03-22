@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/gotify/plugin-api"
@@ -33,8 +32,7 @@ func (c *Plugin) getGameByID(id string) helix.Game {
 
 type messageMetadata struct {
 	*channelStatus
-	UserName string `json:"user_name"`
-	Action   string `json:"action"`
+	Action string `json:"action"`
 }
 
 func (c *Plugin) fetch() error {
@@ -48,7 +46,7 @@ func (c *Plugin) fetch() error {
 	var (
 		stor storage
 		// Mark live channels
-		isLive map[string]bool = make(map[string]bool)
+		isLive map[UserID]bool = make(map[UserID]bool)
 	)
 
 	// Load storage
@@ -63,19 +61,16 @@ func (c *Plugin) fetch() error {
 			status          channelStatus
 			// Does stream already exist in storage
 			isAdded bool
-			// Username in lower
-			username string = strings.ToLower(stream.UserName)
 			// Current category
 			category helix.Game = c.getGameByID(stream.GameID)
 			action   string     = "live"
 		)
 
 		// Mark user is live
-		isLive[username] = true
+		isLive[UserID(stream.UserID)] = true
 
 		// New follow, now live or diffrent start
-		if status, isAdded = stor.StreamStatus[username]; !isAdded || !status.IsLive && stream.StartedAt != status.Start {
-			status.UserID = stream.UserID
+		if status, isAdded = stor.ChannelStatus[UserID(stream.UserID)]; !isAdded || !status.IsLive && stream.StartedAt != status.Start {
 			status.Start = stream.StartedAt
 			status.IsLive = true
 
@@ -88,12 +83,15 @@ func (c *Plugin) fetch() error {
 			continue
 		}
 
-		// Update stream info in storage
+		// Update channelStatus in storage
+		status.StreamID = stream.ID
+		status.Username = stream.UserName
+
 		status.Title = stream.Title
-		status.ThumbnailURL = stream.ThumbnailURL
+		status.Thumbnail = stream.ThumbnailURL
 		status.Category = category
 		status.End = nil
-		stor.StreamStatus[username] = status
+		stor.ChannelStatus[UserID(stream.UserID)] = status
 
 		message := plugin.Message{
 			Message: fmt.Sprintf(`**%s**  
@@ -103,7 +101,7 @@ Started: %s (%s)
 				stream.Title,
 				category.Name,
 				timeFormat(stream.StartedAt.Local()), now.Sub(stream.StartedAt).Round(time.Second),
-				username),
+				status.username()),
 			Priority: c.config.Priority,
 			Extras:   make(map[string]interface{}),
 		}
@@ -113,7 +111,7 @@ Started: %s (%s)
 		} else {
 			message.Title = fmt.Sprintf("Twitch: %s is live", stream.UserName)
 		}
-		message.Extras["twitch::metadata"] = status.GetMetadata(username, action)
+		message.Extras["twitch::metadata"] = status.GetMetadata(action)
 		message.Extras["client::display"] = messageDisplay{"text/markdown"}
 
 		c.msgHandler.SendMessage(message)
@@ -121,20 +119,20 @@ Started: %s (%s)
 	}
 
 	// Update live status to offline
-	for _, username := range c.config.Follow {
-		if !isLive[username] {
+	for userID, status := range stor.ChannelStatus {
+		if !isLive[userID] {
 			// Channel was previously online
-			if status := stor.StreamStatus[username]; status.IsLive {
+			if status.IsLive {
 				status.SetOffline()
-				stor.StreamStatus[username] = status
+				stor.ChannelStatus[userID] = status
 				// Notify when stream goes offline
 				if c.config.OnOffline {
 					message := plugin.Message{
 						Priority: c.config.Priority,
-						Title:    fmt.Sprintf("Twitch: %s offline", username),
+						Title:    fmt.Sprintf("Twitch: %s offline", status.Username),
 						Extras:   make(map[string]interface{}),
 					}
-					message.Extras["twitch::metadata"] = status.GetMetadata(username, "offline")
+					message.Extras["twitch::metadata"] = status.GetMetadata("offline")
 					message.Extras["client::display"] = messageDisplay{"text/markdown"}
 					c.msgHandler.SendMessage(message)
 				}

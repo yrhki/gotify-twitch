@@ -1,19 +1,27 @@
 package main
 
 import (
+	"strings"
 	"time"
 
 	"github.com/nicklaw5/helix"
 )
 
+type UserID string
+
 type channelStatus struct {
-	UserID       string     `json:"user_id"`
-	Category     helix.Game `json:"category"`
-	IsLive       bool       `json:"live"`
-	Start        time.Time  `json:"start"`
-	Title        string     `json:"title"`
-	ThumbnailURL string     `json:"thumbnail_url"`
-	End          *time.Time `json:"end"`
+	Category  helix.Game `json:"category"`
+	IsLive    bool       `json:"live"`
+	Start     time.Time  `json:"start"`
+	Title     string     `json:"title"`
+	Thumbnail string     `json:"thumbnail"`
+	End       *time.Time `json:"end"`
+	StreamID  string     `json:"stream_id"`
+	Username  string     `json:"username"`
+}
+
+func (status *channelStatus) username() string {
+	return strings.ToLower(status.Username)
 }
 
 // Set Stream offline
@@ -24,17 +32,19 @@ func (stat *channelStatus) SetOffline() {
 }
 
 // Convert StreamStatus to messageMetadata
-func (stat *channelStatus) GetMetadata(username, action string) messageMetadata {
+func (stat *channelStatus) GetMetadata(action string) messageMetadata {
 	out := messageMetadata{
 		channelStatus: stat,
-		UserName:      username,
 		Action:        action,
 	}
 
 	return out
 }
 
+const storageVersion = 3
+
 // Storage for plugin
 type storage struct {
-	StreamStatus map[string]channelStatus `json:"streams_status"`
+	ChannelStatus map[UserID]channelStatus `json:"channel_status"`
+	Version       uint                     `json:"version"`
 }
