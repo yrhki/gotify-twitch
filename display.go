@@ -47,6 +47,10 @@ func (c *Plugin) GetDisplay(location *url.URL) string {
 	}
 
 	for _, status := range stor.ChannelStatus {
+		if !c.config.isFollow(status.Username) {
+			continue
+		}
+
 		if status.IsLive {
 			err = tempDisplayChannel.Execute(bufLive, status)
 		} else {

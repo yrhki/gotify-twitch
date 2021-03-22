@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/nicklaw5/helix"
 )
@@ -41,6 +42,15 @@ func (c *Config) Valid() error {
 	}
 
 	return nil
+}
+
+func (c Config) isFollow(username string) bool {
+	for _, follow := range c.Follow {
+		if strings.ToLower(follow) == strings.ToLower(username) {
+			return true
+		}
+	}
+	return false
 }
 
 // ValidateAndSetConfig implements  plugin.Configurer

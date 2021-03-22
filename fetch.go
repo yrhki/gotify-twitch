@@ -120,6 +120,10 @@ Started: %s (%s)
 
 	// Update live status to offline
 	for userID, status := range stor.ChannelStatus {
+		if !c.config.isFollow(status.Username) {
+			delete(stor.ChannelStatus, userID)
+			continue
+		}
 		if !isLive[userID] {
 			// Channel was previously online
 			if status.IsLive {
