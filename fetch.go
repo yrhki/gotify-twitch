@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/gotify/plugin-api"
 	"github.com/nicklaw5/helix"
@@ -52,7 +51,6 @@ func (c *Plugin) fetch() error {
 	// Load storage
 	storageBytes, err := c.storageHandler.Load()
 	err = json.Unmarshal(storageBytes, &stor)
-	now := time.Now()
 
 	for _, stream := range resp.Data.Streams {
 		var (
@@ -69,8 +67,8 @@ func (c *Plugin) fetch() error {
 		// Mark user is live
 		isLive[userID(stream.UserID)] = true
 
-		// New follow, now live or diffrent start
-		if status, isAdded = stor.ChannelStatus[userID(stream.UserID)]; !isAdded || !status.IsLive && stream.StartedAt != status.Start {
+		// New follow, now live or diffrent stream ID
+		if status, isAdded = stor.ChannelStatus[userID(stream.UserID)]; !isAdded || !status.IsLive && stream.ID != status.StreamID {
 			status.Start = stream.StartedAt
 			status.IsLive = true
 
@@ -100,7 +98,7 @@ Started: %s (%s)
 [WATCH](https://twitch.tv/%s)`,
 				stream.Title,
 				category.Name,
-				timeFormat(stream.StartedAt.Local()), now.Sub(stream.StartedAt).Round(time.Second),
+				timeFormat(stream.StartedAt.Local()), status.Uptime(),
 				status.UsernameLower()),
 			Priority: c.config.Priority,
 			Extras:   make(map[string]interface{}),
