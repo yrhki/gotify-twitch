@@ -20,7 +20,7 @@ const tempDisplayChannelTxt = `
 **Title**: {{.Title}}  
 **Category**: {{.Category.Name}}  
 **Start**: {{timeFormat .Start.Local}}  
-**End**: {{timeFormat .Start.Local}} ({{.Uptime}})  
+**End**: {{timeFormat .End.Local}} ({{.Uptime}})  
 {{ end }}
 `
 
