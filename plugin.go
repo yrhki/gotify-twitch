@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
@@ -52,6 +53,9 @@ func (c *Plugin) Enable() error {
 	api, err := helix.NewClient(&helix.Options{
 		ClientID:       c.config.ClientID,
 		AppAccessToken: c.config.Token,
+		HTTPClient: &http.Client{
+			Timeout: time.Hour * 1,
+		},
 	})
 
 	// Test authentication
